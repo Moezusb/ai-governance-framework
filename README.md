@@ -85,7 +85,7 @@ The most important gate -- and the one most organizations implement performative
 
 **The 10% Audit.** Ten percent of all autonomous AI resolutions are reviewed by a human -- not for accuracy alone, but for tone, brand alignment, and the quality of judgment the system demonstrated. The reviewer is looking for the cases where the system was technically correct but humanly wrong.
 
-**The 60-Second Kill Switch.** Every AI agent has a centralized disable command reachable by the Operations Lead within 60 seconds. This is not a technical nice-to-have. It is the difference between an incident and a crisis.
+**The 60-Second Kill Switch.** Every AI agent has a centralized disable command reachable by a Designated Lead within 60 seconds. This is not a technical nice-to-have. It is the difference between an incident and a crisis.
 
 **Escalation Paths.** Every customer-facing AI deployment has a defined escalation path to a human. The path is documented, tested quarterly, and known to the full support team. "The AI should handle it" is never an acceptable answer to "what happens when it can't?"
 
