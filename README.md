@@ -134,4 +134,4 @@ Three compounding returns:
 **Stack:** Strategic Framework / Operational Playbook
 **Author:** Mohamed Bah | [LinkedIn](https://www.linkedin.com/in/bah-007700/)
 **Informed by:** Deployment experience, Cialdini's influence frameworks, behavioral operations research
-**Status:** Living document -- governance that does not evolve is governance that has already failed
+**Status:** Living document -- governance that does not evolve is governance that has already failed.
