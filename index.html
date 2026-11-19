@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Governance Tier Classifier · Mohamed Bah</title>
+<meta name="description" content="Classify an AI use case on two axes, consequence and agency, and get the oversight model it deserves. Part of an open AI governance framework.">
+<style>
+  :root {
+    --paper: #f6f2ea;
+    --card: #fffdf8;
+    --ink: #1d1b18;
+    --muted: #6b6459;
+    --line: #ddd5c6;
+    --accent: #1f5c57;
+    --accent-soft: #e3eeec;
+    --t1: #3f7a4d;
+    --t1-soft: #e6f0e7;
+    --t2: #a8661c;
+    --t2-soft: #f7ecdc;
+    --t3: #8e2f2b;
+    --t3-soft: #f5e2e0;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible, input:focus-visible + .opt, input:focus-visible + .chk {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  header.top { padding: 56px 0 28px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 14px;
+  }
+  h1 {
+    font-family: var(--serif); font-weight: 600; font-size: clamp(34px, 5vw, 54px);
+    line-height: 1.05; margin: 0 0 18px; letter-spacing: -.01em;
+  }
+  .lede { font-size: 18px; max-width: 640px; color: #3a362f; margin: 0 0 18px; }
+  .verse {
+    font-family: var(--serif); font-style: italic; color: var(--muted);
+    margin: 0; font-size: 17px;
+  }
+
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 40px; padding: 36px 0 64px; }
+  @media (max-width: 920px) { main { grid-template-columns: 1fr; } }
+
+  fieldset { border: 0; padding: 0; margin: 0 0 40px; min-width: 0; }
+  legend { padding: 0; margin-bottom: 6px; }
+  .step-num {
+    font-family: var(--serif); font-size: 14px; color: var(--accent);
+    display: block; margin-bottom: 2px; letter-spacing: .04em;
+  }
+  .step-title { font-family: var(--serif); font-size: 25px; font-weight: 600; line-height: 1.2; }
+  .question { color: #3a362f; margin: 6px 0 16px; max-width: 620px; }
+
+  .name-input {
+    width: 100%; font: inherit; font-size: 17px; padding: 12px 14px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink);
+  }
+  .name-input:focus { outline: 3px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+
+  .options { display: grid; gap: 10px; }
+  .options.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 600px) { .options.four { grid-template-columns: 1fr; } }
+  .options input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .opt, .chk {
+    display: block; background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px 14px 48px; cursor: pointer; position: relative;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+  }
+  .opt::before, .chk::before {
+    content: ""; position: absolute; left: 16px; top: 17px; width: 18px; height: 18px;
+    border: 1.5px solid #a99f8d; background: #fff;
+  }
+  .opt::before { border-radius: 50%; }
+  .chk::before { border-radius: 4px; }
+  .opt:hover, .chk:hover { border-color: #b9ae99; }
+  input:checked + .opt, input:checked + .chk {
+    border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset;
+  }
+  input:checked + .opt::before { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 5px, #fff 6px); }
+  input:checked + .chk::before { border-color: var(--accent); background: var(--accent); }
+  input:checked + .chk::after {
+    content: ""; position: absolute; left: 22px; top: 20px; width: 6px; height: 10px;
+    border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .code { font-weight: 700; color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+  .opt-title { font-weight: 600; }
+  .opt-desc { display: block; color: var(--muted); font-size: 14px; margin-top: 3px; }
+
+  aside { position: relative; }
+  .result {
+    position: sticky; top: 20px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 24px; box-shadow: 0 1px 0 rgba(0,0,0,.03), 0 8px 24px rgba(60,45,20,.06);
+  }
+  .result-label { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+  .result-name { font-family: var(--serif); font-size: 18px; margin: 0 0 14px; word-break: break-word; }
+  .tier {
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 16px;
+    background: #efe9dd; color: var(--muted);
+  }
+  .tier-big { font-family: var(--serif); font-size: 32px; font-weight: 600; line-height: 1.1; display: block; }
+  .tier-sub { font-size: 14px; display: block; margin-top: 4px; }
+  .tier.t1 { background: var(--t1-soft); color: var(--t1); }
+  .tier.t2 { background: var(--t2-soft); color: var(--t2); }
+  .tier.t3 { background: var(--t3-soft); color: var(--t3); }
+  .why { font-size: 14px; color: #3a362f; margin: 0 0 16px; }
+  .why ol { margin: 6px 0 0; padding-left: 20px; }
+  .warn {
+    border-left: 3px solid var(--t3); background: var(--t3-soft); color: #5e1f1c;
+    padding: 10px 12px; border-radius: 0 8px 8px 0; font-size: 14px; margin: 0 0 16px;
+  }
+  .note {
+    border-left: 3px solid var(--t2); background: var(--t2-soft); color: #5f3a10;
+    padding: 10px 12px; border-radius: 0 8px 8px 0; font-size: 14px; margin: 0 0 16px;
+  }
+
+  .grid {
+    display: grid; grid-template-columns: 34px repeat(4, 1fr); gap: 3px; margin: 4px 0 18px;
+    font-size: 12px; font-variant-numeric: tabular-nums;
+  }
+  .grid .h { color: var(--muted); text-align: center; padding: 3px 0; font-weight: 600; }
+  .grid .c {
+    text-align: center; padding: 7px 0; border-radius: 5px; font-weight: 600; opacity: .55;
+  }
+  .grid .c.k1 { background: var(--t1-soft); color: var(--t1); }
+  .grid .c.k2 { background: var(--t2-soft); color: var(--t2); }
+  .grid .c.k3 { background: var(--t3-soft); color: var(--t3); }
+  .grid .c.on { opacity: 1; box-shadow: 0 0 0 2px var(--ink) inset; }
+
+  .block-title { font-family: var(--serif); font-size: 17px; font-weight: 600; margin: 18px 0 8px; }
+  .list { margin: 0; padding: 0; list-style: none; font-size: 14px; }
+  .list li { padding: 7px 0; border-top: 1px solid #eee7da; }
+  .list li:first-child { border-top: 0; }
+  .list b { font-weight: 600; }
+
+  .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  button {
+    font: inherit; font-size: 15px; font-weight: 600; border-radius: 8px; padding: 10px 16px; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff;
+  }
+  button.ghost { background: transparent; color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .copied { font-size: 13px; color: var(--accent); align-self: center; min-height: 1em; }
+
+  .empty { font-size: 14px; color: var(--muted); }
+
+  footer { border-top: 1px solid var(--line); padding: 28px 0 48px; color: var(--muted); font-size: 14px; }
+  footer p { margin: 0 0 8px; max-width: 760px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">AI Governance Framework · Tier Classifier</p>
+    <h1 style="max-width:620px">How much oversight does this AI deserve?</h1>
+    <p class="lede">Answer four questions about one AI use case. You will get its tier, the oversight model that goes with it, and a summary to paste into your intake form.</p>
+    <p class="verse">A system that drafts is not a system that sends,<br>even when the words are identical.</p>
+  </div>
+</header>
+
+<div class="wrap">
+<main>
+  <form id="form" autocomplete="off" onsubmit="return false">
+
+    <fieldset>
+      <legend><span class="step-num">01</span><span class="step-title">Name the use case</span></legend>
+      <p class="question">One line, in plain words. What does the system do?</p>
+      <label for="usecase" class="visually-hidden" style="position:absolute;left:-9999px">Use case</label>
+      <input class="name-input" id="usecase" type="text" maxlength="140" placeholder="e.g. Support agent answers billing questions from the help center">
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="step-num">02 · Axis one</span><span class="step-title">Consequence</span></legend>
+      <p class="question">If this system produces a confident wrong answer, what is the worst-case outcome for the person on the other end?</p>
+      <div class="options" role="radiogroup">
+        <label><input type="radio" name="c" value="1"><span class="opt"><span class="code">C1</span><span class="opt-title">Contained</span><span class="opt-desc">Internal and reversible, and a person reads it before it matters. Meeting summaries, first drafts, internal research.</span></span></label>
+        <label><input type="radio" name="c" value="2"><span class="opt"><span class="code">C2</span><span class="opt-title">Exposed</span><span class="opt-desc">Reaches customers or the public, or informs a decision someone will act on. Support answers, help articles, release notes, reports leadership acts on.</span></span></label>
+        <label><input type="radio" name="c" value="3"><span class="opt"><span class="code">C3</span><span class="opt-title">Binding</span><span class="opt-desc">Creates or changes an obligation, a record of truth, or a significant decision about a person. Pricing, contracts, refunds, legal statements, clinical records, hiring, eligibility.</span></span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="step-num">03 · Axis two</span><span class="step-title">Agency</span></legend>
+      <p class="question">What can this system do in the world before a human says yes?</p>
+      <div class="options four" role="radiogroup">
+        <label><input type="radio" name="a" value="0"><span class="opt"><span class="code">A0</span><span class="opt-title">Advise</span><span class="opt-desc">Produces text or analysis. A human takes every action.</span></span></label>
+        <label><input type="radio" name="a" value="1"><span class="opt"><span class="code">A1</span><span class="opt-title">Read</span><span class="opt-desc">Retrieves from systems through tools or connectors, read-only.</span></span></label>
+        <label><input type="radio" name="a" value="2"><span class="opt"><span class="code">A2</span><span class="opt-title">Act, reversibly</span><span class="opt-desc">Writes inside your own systems in ways that can be undone. Draft tickets, tags, internal posts.</span></span></label>
+        <label><input type="radio" name="a" value="3"><span class="opt"><span class="code">A3</span><span class="opt-title">Act, irreversibly or externally</span><span class="opt-desc">Sends to customers, publishes, pays, deletes, deploys, or changes a record of truth.</span></span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="step-num">04</span><span class="step-title">Modifiers</span></legend>
+      <p class="question">Tick any that apply. Each can raise the tier; none can lower it.</p>
+      <div class="options">
+        <label><input type="checkbox" name="m" value="sensitive"><span class="chk"><span class="opt-title">Sensitive data</span><span class="opt-desc">Personal information, health data, financial account data, or confidential customer data. Minimum Tier 2.</span></span></label>
+        <label><input type="checkbox" name="m" value="regulated"><span class="chk"><span class="opt-title">Regulated output</span><span class="opt-desc">The output enters a regulated process or record: clinical documentation, financial reporting and controls, credit, insurance, employment, education. Raises one tier.</span></span></label>
+        <label><input type="checkbox" name="m" value="people"><span class="chk"><span class="opt-title">Decisions about people</span><span class="opt-desc">Affects someone's access, eligibility, employment, or treatment. Tier 3.</span></span></label>
+        <label><input type="checkbox" name="m" value="builder"><span class="chk"><span class="opt-title">Operator-built, single reviewer</span><span class="opt-desc">Built by an operator, and the builder is the only person checking outputs. Minimum Tier 2 until a second reviewer exists.</span></span></label>
+      </div>
+    </fieldset>
+
+  </form>
+
+  <aside aria-live="polite">
+    <div class="result" id="result">
+      <p class="result-label">Result</p>
+      <p class="result-name" id="rname">Your use case</p>
+      <div class="tier" id="tier"><span class="tier-big" id="tierBig">Not yet classified</span><span class="tier-sub" id="tierSub">Choose a consequence and an agency level.</span></div>
+
+      <div class="grid" id="grid" aria-hidden="true"></div>
+
+      <div id="detail"><p class="empty">The matrix above lights up as you answer. Consequence sets the floor, agency raises it, and modifiers can only push upward.</p></div>
+
+      <div class="actions">
+        <button type="button" id="copy" disabled>Copy summary</button>
+        <button type="button" id="reset" class="ghost">Reset</button>
+        <span class="copied" id="copied" role="status"></span>
+      </div>
+    </div>
+  </aside>
+</main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>Part of the open <a href="https://github.com/Moezusb/ai-governance-framework">AI Governance Framework</a>, an operator's playbook for deploying AI that answers, decides, and acts. Read the reasoning in <a href="https://github.com/Moezusb/ai-governance-framework/blob/main/docs/02-risk-classification.md">Risk Classification</a>.</p>
+    <p>This tool gives a starting classification, not a legal or compliance determination. Nothing you type leaves your browser.</p>
+    <p>Built by <a href="https://www.linkedin.com/in/bah-007700/">Mohamed Bah</a> · <a href="https://moezusb.github.io">Portfolio</a></p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var BASE = "https://github.com/Moezusb/ai-governance-framework/blob/main/";
+  // Consequence (rows 1..3) x Agency (cols 0..3) -> tier
+  var MATRIX = { 1: [1, 1, 2, 2], 2: [2, 2, 2, 2], 3: [3, 3, 3, 3] };
+  var CELL_LABEL = {
+    "2-3": "T2·auto",
+    "3-3": "T3·no auto"
+  };
+
+  var TIERS = {
+    1: {
+      name: "Tier 1 · Contained",
+      sub: "Light touch. Keep it registered and keep an eye on it.",
+      oversight: [
+        ["Owner", "One named owner"],
+        ["Registration", "Lightweight entry in the AI register"],
+        ["Before launch", "A written problem statement"],
+        ["Human review", "Spot sampling, weekly"],
+        ["Kill switch", "Owner can disable it"],
+        ["Change control", "Note changes as you make them"],
+        ["Review cadence", "Quarterly"]
+      ],
+      templates: [["01-use-case-intake.md", "Use Case Intake"]]
+    },
+    2: {
+      name: "Tier 2 · Supervised",
+      sub: "Real exposure. Sample it, test it, and make sure someone can stop it.",
+      oversight: [
+        ["Owner", "Named owner and a named Incident Owner"],
+        ["Registration", "AI System Card"],
+        ["Before launch", "Eval set with pass criteria written in advance, then a pilot"],
+        ["Human review", "Daily, risk-weighted sampling (start at 10%)"],
+        ["Kill switch", "Designated Lead can disable within 60 seconds"],
+        ["Change control", "Change log; re-run evals on every change"],
+        ["Review cadence", "Monthly"],
+        ["Audit trail", "Inputs, outputs, and actions logged"]
+      ],
+      templates: [
+        ["01-use-case-intake.md", "Use Case Intake"],
+        ["02-ai-system-card.md", "AI System Card"],
+        ["05-prompt-and-model-change-log.md", "Prompt and Model Change Log"],
+        ["06-launch-readiness-checklist.md", "Launch Readiness Checklist"]
+      ]
+    },
+    3: {
+      name: "Tier 3 · Accountable",
+      sub: "Binding stakes. A person approves every consequential output or action.",
+      oversight: [
+        ["Owner", "Named owner, Incident Owner, and an accountable executive"],
+        ["Registration", "AI System Card plus Legal or Compliance sign-off"],
+        ["Before launch", "Eval set, pilot, acceptance testing, and validation evidence where regulated"],
+        ["Human review", "Human approval before every consequential output or action"],
+        ["Kill switch", "Designated Lead can disable within 60 seconds, tested before launch"],
+        ["Change control", "Change log, re-run evals, second-person approval for every change"],
+        ["Review cadence", "Bi-weekly"],
+        ["Audit trail", "Inputs, outputs, actions, reviewer, and decision logged and retained"]
+      ],
+      templates: [
+        ["01-use-case-intake.md", "Use Case Intake"],
+        ["02-ai-system-card.md", "AI System Card"],
+        ["05-prompt-and-model-change-log.md", "Prompt and Model Change Log"],
+        ["06-launch-readiness-checklist.md", "Launch Readiness Checklist"],
+        ["07-incident-report.md", "Incident Report (keep it ready)"]
+      ]
+    }
+  };
+
+  var C_NAMES = { 1: "C1 Contained", 2: "C2 Exposed", 3: "C3 Binding" };
+  var A_NAMES = { 0: "A0 Advise", 1: "A1 Read", 2: "A2 Act, reversibly", 3: "A3 Act, irreversibly or externally" };
+  var M_NAMES = {
+    sensitive: "Sensitive data",
+    regulated: "Regulated output",
+    people: "Decisions about people",
+    builder: "Operator-built, single reviewer"
+  };
+
+  var form = document.getElementById("form");
+  var el = function (id) { return document.getElementById(id); };
+  var lastSummary = "";
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+
+  function val(name) {
+    var x = form.querySelector('input[name="' + name + '"]:checked');
+    return x ? parseInt(x.value, 10) : null;
+  }
+  function mods() {
+    return Array.prototype.map.call(form.querySelectorAll('input[name="m"]:checked'), function (x) { return x.value; });
+  }
+
+  function classify(c, a, m) {
+    var steps = [];
+    var tier = MATRIX[c][a];
+    var autonomous = (c === 2 && a === 3);
+    var noAuto = (c === 3 && a === 3);
+    steps.push(C_NAMES[c] + " × " + A_NAMES[a] + " gives Tier " + tier + (autonomous ? " · autonomous" : "") + (noAuto ? " · no autonomous action" : ""));
+
+    if (m.indexOf("regulated") > -1 && tier < 3) { tier += 1; steps.push("Regulated output raises it one tier, to Tier " + tier); }
+    else if (m.indexOf("regulated") > -1) { steps.push("Regulated output: already at Tier 3"); }
+    if (m.indexOf("sensitive") > -1) {
+      if (tier < 2) { tier = 2; steps.push("Sensitive data sets a minimum of Tier 2"); } else { steps.push("Sensitive data: minimum Tier 2 already met"); }
+    }
+    if (m.indexOf("builder") > -1) {
+      if (tier < 2) { tier = 2; steps.push("Single-reviewer builder tool sets a minimum of Tier 2"); } else { steps.push("Single-reviewer builder tool: minimum Tier 2 already met"); }
+    }
+    if (m.indexOf("people") > -1) {
+      if (tier < 3) { tier = 3; steps.push("Decisions about people set Tier 3"); } else { steps.push("Decisions about people: already at Tier 3"); }
+    }
+    return { tier: tier, steps: steps, autonomous: autonomous && tier === 2, autonomousLost: autonomous && tier === 3, noAuto: noAuto };
+  }
+
+  function drawGrid(c, a) {
+    var g = el("grid");
+    var html = '<div class="h"></div><div class="h">A0</div><div class="h">A1</div><div class="h">A2</div><div class="h">A3</div>';
+    for (var r = 1; r <= 3; r++) {
+      html += '<div class="h" style="text-align:left">C' + r + '</div>';
+      for (var k = 0; k <= 3; k++) {
+        var t = MATRIX[r][k];
+        var lbl = CELL_LABEL[r + "-" + k] || ("T" + t);
+        var on = (r === c && k === a) ? " on" : "";
+        html += '<div class="c k' + t + on + '">' + lbl + '</div>';
+      }
+    }
+    g.innerHTML = html;
+  }
+
+  function render() {
+    var name = el("usecase").value.trim();
+    el("rname").textContent = name || "Your use case";
+    var c = val("c"), a = val("a"), m = mods();
+    drawGrid(c, a);
+
+    var tierBox = el("tier");
+    if (c === null || a === null) {
+      tierBox.className = "tier";
+      el("tierBig").textContent = "Not yet classified";
+      el("tierSub").textContent = (c === null && a === null) ? "Choose a consequence and an agency level." : (c === null ? "Now choose a consequence level." : "Now choose an agency level.");
+      el("detail").innerHTML = '<p class="empty">The matrix above lights up as you answer. Consequence sets the floor, agency raises it, and modifiers can only push upward.</p>';
+      el("copy").disabled = true;
+      lastSummary = "";
+      return;
+    }
+
+    var r = classify(c, a, m);
+    var T = TIERS[r.tier];
+    tierBox.className = "tier t" + r.tier;
+    el("tierBig").textContent = T.name + (r.autonomous ? " · autonomous" : "");
+    el("tierSub").textContent = T.sub;
+
+    var html = "";
+    if (r.noAuto) {
+      html += '<p class="warn"><b>Do not ship this design as is.</b> A system that can make binding commitments and act on them without a human is not a higher tier. Split it: an AI that prepares the action, and a person who takes it.</p>';
+    }
+    if (r.autonomous) {
+      html += '<p class="note"><b>Autonomous within a tested scope.</b> This system may act on its own only inside a documented scope that has passed its evals, with sampling, an escalation path to a person, disclosure that it is AI, and a kill switch. Anything binding still goes to a human.</p>';
+    }
+    if (r.autonomousLost) {
+      html += '<p class="note"><b>Autonomy no longer applies.</b> At Tier 3, every consequential output is approved by a person before it goes out. Consider holding answers as drafts for review.</p>';
+    }
+
+    html += '<div class="why"><b>How we got here</b><ol>' + r.steps.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ol></div>";
+
+    html += '<p class="block-title">Oversight model</p><ul class="list">' +
+      T.oversight.map(function (o) { return "<li><b>" + esc(o[0]) + ":</b> " + esc(o[1]) + "</li>"; }).join("") + "</ul>";
+
+    if (a >= 1) {
+      html += '<p class="block-title">Because it uses tools</p><ul class="list">' +
+        '<li>List every tool and scope in the <a href="' + BASE + 'templates/03-tool-permission-register.md" target="_blank" rel="noopener">Tool Permission Register</a></li>' +
+        "<li>Least privilege per task; read-only until evals justify write access</li>" +
+        (a >= 2 ? "<li>Its own identity, or the user's permissions, never shared admin keys</li><li>Kill switch revokes credentials and cancels queued actions</li>" : "") +
+        "</ul>";
+    }
+    if (m.indexOf("builder") > -1) {
+      html += '<p class="block-title">Because an operator built it</p><ul class="list">' +
+        '<li>Complete the <a href="' + BASE + 'templates/04-builder-tool-registration.md" target="_blank" rel="noopener">Builder Tool Registration</a></li>' +
+        "<li>Find a second reviewer who is not the builder</li><li>Write the how-to and name a backup owner</li></ul>";
+    }
+
+    var tpl = T.templates.slice();
+    html += '<p class="block-title">Templates to fill in</p><ul class="list">' +
+      tpl.map(function (t) { return '<li><a href="' + BASE + "templates/" + t[0] + '" target="_blank" rel="noopener">' + esc(t[1]) + "</a></li>"; }).join("") + "</ul>";
+
+    el("detail").innerHTML = html;
+    el("copy").disabled = false;
+
+    // Markdown summary
+    var lines = [];
+    lines.push("## AI use case classification");
+    lines.push("");
+    lines.push("**Use case:** " + (name || "(unnamed)"));
+    lines.push("**Consequence:** " + C_NAMES[c]);
+    lines.push("**Agency:** " + A_NAMES[a]);
+    lines.push("**Modifiers:** " + (m.length ? m.map(function (x) { return M_NAMES[x]; }).join(", ") : "None"));
+    lines.push("**Tier:** " + T.name + (r.autonomous ? " · autonomous (tested scope required)" : ""));
+    if (r.noAuto) lines.push("**Design flag:** binding and autonomous. Split into an AI that prepares the action and a person who takes it.");
+    lines.push("");
+    lines.push("**How we got here:**");
+    r.steps.forEach(function (s, i) { lines.push((i + 1) + ". " + s); });
+    lines.push("");
+    lines.push("**Oversight model:**");
+    T.oversight.forEach(function (o) { lines.push("- " + o[0] + ": " + o[1]); });
+    lines.push("");
+    lines.push("Classified with the AI Governance Framework tier classifier: https://moezusb.github.io/ai-governance-framework/");
+    lastSummary = lines.join("\n");
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.left = "-9999px";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy") ? resolve() : reject(); } catch (e) { reject(e); }
+      document.body.removeChild(ta);
+    });
+  }
+
+  form.addEventListener("change", render);
+  el("usecase").addEventListener("input", render);
+  el("copy").addEventListener("click", function () {
+    if (!lastSummary) return;
+    copyText(lastSummary).then(function () {
+      el("copied").textContent = "Copied as Markdown";
+    }, function () {
+      el("copied").textContent = "Copy failed. Select and copy manually.";
+    });
+    setTimeout(function () { el("copied").textContent = ""; }, 2600);
+  });
+  el("reset").addEventListener("click", function () {
+    form.reset(); el("copied").textContent = ""; render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
